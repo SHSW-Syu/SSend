@@ -46,7 +46,6 @@ app.post('/receive', async (req, res) => {
         const orderId = orderResult.insertId;
 
 
-        await connection.query(orderDetailsQuery, [orderDetailsValues]);
 
         await connection.commit();
         res.json({ success: true, orderId });
