@@ -28,7 +28,7 @@ const pool = mysql.createPool({
 // 获取商品信息
 // 处理订单
 app.post('/receive', async (req, res) => {
-    const { projectId, userId, totalPrice } = req.body;
+    const { projectId, userId, totalPrice, items } = req.body;
 
     if (!projectId || !userId) {
         return res.status(400).json({ error: 'Invalid order data' });
