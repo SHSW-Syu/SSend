@@ -50,9 +50,9 @@ app.post('/receive', async (req, res) => {
         const orderDetailsValues = items.map(item => [
             orderId,
             item.productId,
-            item.quantity,
             item.topping1Id || null,
             item.topping2Id || null,
+            item.quantity,
         ]);
 
         await connection.query(orderDetailsQuery, [orderDetailsValues]);
