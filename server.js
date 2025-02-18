@@ -45,13 +45,6 @@ app.post('/receive', async (req, res) => {
         );
         const orderId = orderResult.insertId;
 
-        // 插入订单详情
-        for (const item of items) {
-            await connection.execute(
-                'INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-                [orderId, item.productId, item.quantity, item.price]
-            );
-        }
 
         await connection.commit();
         res.json({ success: true, orderId });
