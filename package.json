@@ -1,0 +1,24 @@
+{
+  "name": "rc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "proxy": "http://rs-production.up.railway.app",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.3"
+  }
+
+  
+}
+
