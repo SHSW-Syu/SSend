@@ -46,7 +46,7 @@ app.post('/receive', async (req, res) => {
         const orderId = orderResult.insertId;
 
         const orderDetailsQuery =
-            'INSERT INTO item (order_id, product_id, topping1_id, topping2_id, quantity) VALUES ?';
+            'INSERT INTO item (order_id, product_id, topping_id_1, topping_id_2, quantity) VALUES ?';
         const orderDetailsValues = items.map(item => [
             orderId,
             item.productId,
