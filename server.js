@@ -8,7 +8,7 @@ const port = process.env.PORT || 3003;
 
 // 允许跨域请求
 app.use(cors({
-    origin:  ['http://localhost:3000'],
+    origin: ['http://localhost:3000'],
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type'
 }));
@@ -30,7 +30,7 @@ const pool = mysql.createPool({
 app.post('/receive', async (req, res) => {
     const { projectId, userId, totalPrice } = req.body;
 
-    if (!projectId || !userId ) {
+    if (!projectId || !userId) {
         return res.status(400).json({ error: 'Invalid order data' });
     }
 
@@ -41,9 +41,21 @@ app.post('/receive', async (req, res) => {
         // 插入订单
         const [orderResult] = await connection.execute(
             'INSERT INTO gorder (project_id, user_id, total_price, status, cashier) VALUES (?, ?, ?, ?, ?)',
-            [ projectId, userId, totalPrice, 0, 0]
+            [projectId, userId, totalPrice, 0, 0]
         );
         const orderId = orderResult.insertId;
+
+        const orderDetailsQuery =
+            'INSERT INTO item (order_id, product_id, topping1_id, topping2_id, quantity) VALUES ?';
+        const orderDetailsValues = items.map(item => [
+            orderId,
+            item.productId,
+            item.quantity,
+            item.topping1Id || null,
+            item.topping2Id || null,
+        ]);
+
+        await connection.query(orderDetailsQuery, [orderDetailsValues]);
 
 
 
