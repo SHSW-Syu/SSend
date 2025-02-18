@@ -28,9 +28,9 @@ const pool = mysql.createPool({
 // 获取商品信息
 // 处理订单
 app.post('/receive', async (req, res) => {
-    const { projectId, userId, totalPrice, items } = req.body;
+    const { projectId, userId, totalPrice } = req.body;
 
-    if (!projectId || !userId || !items || items.length === 0) {
+    if (!projectId || !userId ) {
         return res.status(400).json({ error: 'Invalid order data' });
     }
 
@@ -41,20 +41,10 @@ app.post('/receive', async (req, res) => {
         // 插入订单
         const [orderResult] = await connection.execute(
             'INSERT INTO gorder (project_id, user_id, total_price, status, cashier) VALUES (?, ?, ?, ?, ?)',
-            [userId, totalPrice, projectId, 0, 0]
+            [ projectId, userId, totalPrice, 0, 0]
         );
         const orderId = orderResult.insertId;
 
-        // 插入订单详情
-        const orderDetailsQuery =
-            'INSERT INTO item (order_id, product_id, topping1_id, topping2_id, quantity) VALUES ?';
-        const orderDetailsValues = items.map(item => [
-            orderId,
-            item.productId,
-            item.topping1Id || null,
-            item.topping2Id || null,
-            item.quantity
-        ]);
 
         await connection.query(orderDetailsQuery, [orderDetailsValues]);
 
