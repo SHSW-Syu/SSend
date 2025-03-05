@@ -47,10 +47,10 @@ app.post('/submit', async (req, res) => {
 
         // 插入产品信息
         for (let i = 1; i <= product_count; i++) {
-            const product_name = req.body[`productname${i}`];
-            const product_price = req.body[`productprice${i}`];
-            const topping_group = req.body[`toppinggroup${i}`];
-            const topping_limit = req.body[`toppinglimit${i}`];
+            const product_name = req.body[`product_name${i}`];
+            const product_price = req.body[`product_price${i}`];
+            const topping_group = req.body[`topping_group${i}`];
+            const topping_limit = req.body[`topping_limit${i}`];
 
             await connection.execute(
                 'INSERT INTO product (project_id, product_name, product_price, topping_group, topping_limit) VALUES (?, ?, ?, ?, ?)',
@@ -60,9 +60,9 @@ app.post('/submit', async (req, res) => {
 
         // 插入配料信息
         for (let i = 1; i <= topping_count; i++) {
-            const topping_name = req.body[`toppingname${i}`];
-            const topping_price = req.body[`toppingprice${i}`];
-            const topping_group = req.body[`toppinggroup${i}`];
+            const topping_name = req.body[`topping_name${i}`];
+            const topping_price = req.body[`topping_price${i}`];
+            const topping_group = req.body[`topping_group${i}`];
 
             await connection.execute(
                 'INSERT INTO topping (project_id, topping_name, topping_price, topping_group) VALUES (?, ?, ?, ?)',
