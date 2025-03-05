@@ -13,6 +13,7 @@ app.use(cors({
     allowedHeaders: 'Content-Type'
 }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true })); // 解析表单数据
 
 // 创建 MySQL 连接池
 const pool = mysql.createPool({
@@ -25,12 +26,66 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// 获取商品信息
+// 处理表单提交
+app.post('/submit', async (req, res) => {
+    const { project_name, project_floor, project_color, product_count, topping_count } = req.body;
+
+    if (!project_name || !project_floor || !project_color || !product_count || !topping_count) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 插入项目信息
+        const [projectResult] = await connection.execute(
+            'INSERT INTO project (project_name, project_floor, project_color) VALUES (?, ?, ?)',
+            [project_name, project_floor, project_color]
+        );
+        const project_id = projectResult.insertId;
+
+        // 插入产品信息
+        for (let i = 1; i <= product_count; i++) {
+            const product_name = req.body[`productname${i}`];
+            const product_price = req.body[`productprice${i}`];
+            const topping_group = req.body[`toppinggroup${i}`];
+            const topping_limit = req.body[`toppinglimit${i}`];
+
+            await connection.execute(
+                'INSERT INTO product (project_id, product_name, product_price, topping_group, topping_limit) VALUES (?, ?, ?, ?, ?)',
+                [project_id, product_name, product_price, topping_group, topping_limit]
+            );
+        }
+
+        // 插入配料信息
+        for (let i = 1; i <= topping_count; i++) {
+            const topping_name = req.body[`toppingname${i}`];
+            const topping_price = req.body[`toppingprice${i}`];
+            const topping_group = req.body[`toppinggroup${i}`];
+
+            await connection.execute(
+                'INSERT INTO topping (project_id, topping_name, topping_price, topping_group) VALUES (?, ?, ?, ?)',
+                [project_id, topping_name, topping_price, topping_group]
+            );
+        }
+
+        await connection.commit();
+        res.json({ success: true, project_id });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error processing form submission:', error);
+        res.status(500).json({ error: 'Failed to process form submission' });
+    } finally {
+        connection.release();
+    }
+});
+
 // 处理订单
 app.post('/receive', async (req, res) => {
-    const { projectId, userId, totalPrice, items } = req.body;
+    const { project_id, user_id, total_price, items } = req.body;
 
-    if (!projectId || !userId) {
+    if (!project_id || !user_id) {
         return res.status(400).json({ error: 'Invalid order data' });
     }
 
@@ -41,26 +96,24 @@ app.post('/receive', async (req, res) => {
         // 插入订单
         const [orderResult] = await connection.execute(
             'INSERT INTO gorder (project_id, user_id, total_price, status, cashier) VALUES (?, ?, ?, ?, ?)',
-            [projectId, userId, totalPrice, 0, 0]
+            [project_id, user_id, total_price, 0, 0]
         );
-        const orderId = orderResult.insertId;
+        const order_id = orderResult.insertId;
 
         const orderDetailsQuery =
             'INSERT INTO item (order_id, product_id, topping_id_1, topping_id_2, quantity) VALUES ?';
         const orderDetailsValues = items.map(item => [
-            orderId,
-            item.productId,
-            item.topping1Id || null,
-            item.topping2Id || null,
+            order_id,
+            item.product_id,
+            item.topping_id_1 || null,
+            item.topping_id_2 || null,
             item.quantity,
         ]);
 
         await connection.query(orderDetailsQuery, [orderDetailsValues]);
 
-
-
         await connection.commit();
-        res.json({ success: true, orderId });
+        res.json({ success: true, order_id });
     } catch (error) {
         await connection.rollback();
         console.error('Error processing order:', error);
@@ -69,6 +122,7 @@ app.post('/receive', async (req, res) => {
         connection.release();
     }
 });
+
 // 启动服务器
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${port}`);
