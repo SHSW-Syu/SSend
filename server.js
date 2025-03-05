@@ -52,9 +52,13 @@ app.post('/submit', async (req, res) => {
             const topping_group = req.body[`topping_group${i}`];
             const topping_limit = req.body[`topping_limit${i}`];
 
+            if (!product_name || !product_price) {
+                throw new Error(`Missing data for product ${i}`);
+            }
+
             await connection.execute(
                 'INSERT INTO product (project_id, product_name, product_price, topping_group, topping_limit) VALUES (?, ?, ?, ?, ?)',
-                [project_id, product_name, product_price, topping_group, topping_limit]
+                [project_id, product_name, product_price, topping_group || null, topping_limit || null]
             );
         }
 
@@ -64,9 +68,13 @@ app.post('/submit', async (req, res) => {
             const topping_price = req.body[`topping_price${i}`];
             const topping_group = req.body[`topping_group${i}`];
 
+            if (!topping_name || !topping_price) {
+                throw new Error(`Missing data for topping ${i}`);
+            }
+
             await connection.execute(
                 'INSERT INTO topping (project_id, topping_name, topping_price, topping_group) VALUES (?, ?, ?, ?)',
-                [project_id, topping_name, topping_price, topping_group]
+                [project_id, topping_name, topping_price, topping_group || null]
             );
         }
 
@@ -74,8 +82,8 @@ app.post('/submit', async (req, res) => {
         res.json({ success: true, project_id });
     } catch (error) {
         await connection.rollback();
-        console.error('Error processing form submission:', error);
-        res.status(500).json({ error: 'Failed to process form submission' });
+        console.error('Error processing form submission:', error.message);
+        res.status(500).json({ error: `Failed to process form: ${error.message}` });
     } finally {
         connection.release();
     }
