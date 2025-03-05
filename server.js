@@ -34,6 +34,11 @@ app.post('/submit', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // 验证 product_count 和 topping_count 是否为正整数
+    if (product_count <= 0 || topping_count <= 0) {
+        return res.status(400).json({ error: 'Product and topping counts must be greater than 0' });
+    }
+
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
@@ -56,9 +61,14 @@ app.post('/submit', async (req, res) => {
                 throw new Error(`Missing data for product ${i}`);
             }
 
+            const topping_group_parsed = topping_group ? parseInt(topping_group, 10) : null;
+            if (topping_group && isNaN(topping_group_parsed)) {
+                throw new Error(`Invalid topping group for product ${i}`);
+            }
+
             await connection.execute(
                 'INSERT INTO product (project_id, product_name, product_price, topping_group, topping_limit) VALUES (?, ?, ?, ?, ?)',
-                [project_id, product_name, product_price, topping_group || null, topping_limit || null]
+                [project_id, product_name, product_price, topping_group_parsed, topping_limit || null]
             );
         }
 
@@ -72,9 +82,14 @@ app.post('/submit', async (req, res) => {
                 throw new Error(`Missing data for topping ${i}`);
             }
 
+            const topping_group_parsed = topping_group ? parseInt(topping_group, 10) : null;
+            if (topping_group && isNaN(topping_group_parsed)) {
+                throw new Error(`Invalid topping group for topping ${i}`);
+            }
+
             await connection.execute(
                 'INSERT INTO topping (project_id, topping_name, topping_price, topping_group) VALUES (?, ?, ?, ?)',
-                [project_id, topping_name, topping_price, topping_group || null]
+                [project_id, topping_name, topping_price, topping_group_parsed]
             );
         }
 
@@ -82,7 +97,7 @@ app.post('/submit', async (req, res) => {
         res.json({ success: true, project_id });
     } catch (error) {
         await connection.rollback();
-        console.error('Error processing form submission:', error.message);
+        console.error('Error processing form submission:', error);
         res.status(500).json({ error: `Failed to process form: ${error.message}` });
     } finally {
         connection.release();
